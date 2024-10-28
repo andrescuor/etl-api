@@ -1,3 +1,36 @@
-version: ""
+version: '3.8'
+
+networks:
+  my_network:
+    driver: bridge
 
 services:
+
+  postgres_ddbb:
+    image: postgres:15-alpine
+    container_name: db_etl_postgres
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=admin
+      - POSTGRES_DB=company_db
+    ports:
+      - "5432:5432"
+    volumes:
+     - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - my_network
+
+  app:
+    build:
+      context: .
+      dockerfile: ./app/Dockerfile
+    container_name: etl_csv_app
+    environment:
+      - DATABASE_URL=postgresql://admin:admin@postgres_ddbb:5432/company_db
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres_ddbb
+    networks:
+      - my_network
+
